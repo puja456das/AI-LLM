@@ -11,12 +11,30 @@ const USER_KEY = 'careerpilot_user';
 export class AuthService {
   private readonly profile = signal<UserProfile | null>(this.readUser());
   readonly user = this.profile.asReadonly();
-  readonly isAuthenticated = computed(() => this.profile() !== null && !!this.token());
+  readonly isAuthenticated = computed(() => {
+    const token = this.token();
+    return this.profile() !== null && !!token && !this.isTokenExpired(token);
+  });
 
   constructor(private readonly http: HttpClient, private readonly router: Router) {}
 
   token(): string | null {
     return sessionStorage.getItem(TOKEN_KEY);
+  }
+
+  isTokenExpired(token: string | null = this.token()): boolean {
+    if (!token) return true;
+    try {
+      const parts = token.split('.');
+      if (parts.length !== 3) return true;
+      // atob decodes base64 string
+      const payload = JSON.parse(atob(parts[1]));
+      if (!payload.exp) return false;
+      // exp is in seconds, compare with Date.now() in ms (with 5 seconds buffer)
+      return Date.now() >= (payload.exp * 1000 - 5000);
+    } catch {
+      return true;
+    }
   }
 
   register(fullName: string, email: string, password: string): Observable<AuthResponse> {
@@ -32,11 +50,16 @@ export class AuthService {
     return this.http.get<UserProfile>('/api/v1/auth/me').pipe(tap((user) => this.saveUser(user)));
   }
 
-  logout(): void {
+  updateProfile(fullName: string): Observable<UserProfile> {
+    return this.http.put<UserProfile>('/api/v1/auth/me', { full_name: fullName }).pipe(tap((user) => this.saveUser(user)));
+  }
+
+  logout(expired = false): void {
     sessionStorage.removeItem(TOKEN_KEY);
     sessionStorage.removeItem(USER_KEY);
     this.profile.set(null);
-    void this.router.navigateByUrl('/login');
+    const extras = expired ? { queryParams: { expired: 'true' } } : undefined;
+    void this.router.navigate(['/login'], extras);
   }
 
   messageFor(error: unknown): string {

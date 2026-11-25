@@ -1,0 +1,5 @@
+Hello! This is a test file created by Antigravity to verify file writing capabilities in the project.
+
+Created at: 2026-11-25 09:48:45 IST
+Project: CareerPilot-AI (AI-LLM)
+Status: File writing is working properly!

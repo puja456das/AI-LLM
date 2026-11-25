@@ -4,5 +4,17 @@ import { AuthService } from './auth.service';
 
 export const authGuard: CanActivateFn = () => {
   const auth = inject(AuthService);
-  return auth.isAuthenticated() ? true : inject(Router).createUrlTree(['/login']);
+  const router = inject(Router);
+
+  if (!auth.isAuthenticated()) {
+    const hadToken = !!auth.token();
+    if (hadToken) {
+      // Clear expired or stale token from session
+      auth.logout(true);
+      return router.createUrlTree(['/login'], { queryParams: { expired: 'true' } });
+    }
+    return router.createUrlTree(['/login']);
+  }
+
+  return true;
 };

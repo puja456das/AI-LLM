@@ -1,5 +1,6 @@
 import { Routes } from '@angular/router';
 import { authGuard } from './core/auth.guard';
+import { adminGuard } from './core/admin.guard';
 
 export const routes: Routes = [
   // Auth pages (no layout)
@@ -18,7 +19,8 @@ export const routes: Routes = [
       { path: 'jobs', loadComponent: () => import('./features/jobs/jobs.component').then(m => m.JobsComponent) },
       { path: 'skills', loadComponent: () => import('./features/skills/skills.component').then(m => m.SkillsComponent) },
       { path: 'interview', loadComponent: () => import('./features/interview/interview.component').then(m => m.InterviewComponent) },
-      { path: 'profile', loadComponent: () => import('./features/profile/profile.component').then(m => m.ProfileComponent) }
+      { path: 'profile', loadComponent: () => import('./features/profile/profile.component').then(m => m.ProfileComponent) },
+      { path: 'admin', canActivate: [adminGuard], loadComponent: () => import('./features/admin/admin.component').then(m => m.AdminComponent) }
     ]
   },
   { path: '**', redirectTo: '' }

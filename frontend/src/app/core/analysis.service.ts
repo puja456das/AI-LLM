@@ -1,13 +1,39 @@
 import { Injectable, signal } from '@angular/core';
 import { ResumeAnalysis } from './auth.models';
 
-/**
- * Shared service to hold the latest resume analysis result.
- * Other components (Jobs, Skills) can read from this service
- * without needing to pass data via routes.
- */
+const STORAGE_KEY = 'careerpilot_resume_analysis';
+
 @Injectable({ providedIn: 'root' })
 export class AnalysisService {
-  // Holds the whole analysis object or null if none yet.
-  readonly result = signal<ResumeAnalysis | null>(null);
+  private readonly _result = signal<ResumeAnalysis | null>(this.readStorage());
+
+  readonly result = this._result.asReadonly();
+
+  setResult(analysis: ResumeAnalysis | null): void {
+    this._result.set(analysis);
+    if (analysis) {
+      try {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(analysis));
+      } catch (e) {
+        console.error('Failed to save analysis to localStorage', e);
+      }
+    } else {
+      try {
+        localStorage.removeItem(STORAGE_KEY);
+      } catch (e) {}
+    }
+  }
+
+  clear(): void {
+    this.setResult(null);
+  }
+
+  private readStorage(): ResumeAnalysis | null {
+    try {
+      const data = localStorage.getItem(STORAGE_KEY);
+      return data ? JSON.parse(data) : null;
+    } catch {
+      return null;
+    }
+  }
 }
